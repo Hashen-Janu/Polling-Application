@@ -1,18 +1,12 @@
 package com.poll.poll_Spring_Boot.dtos;
 
-import com.poll.poll_Spring_Boot.enums.UserRole;
 import lombok.Data;
 
 @Data
-public class UserDTO {
-
-    private Long id;
+public class SignupRequest {
 
     private String email;
-
+    private String password;
     private String firstname;
     private String lastname;
-
-    private UserRole userRole;
-
 }
