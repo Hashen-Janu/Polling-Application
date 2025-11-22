@@ -1,46 +1,36 @@
-
 import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode";
+
 const TOKEN = 'token';
 
-export const saveToken = (token) =>{
+export const saveToken = (token) => {
     Cookies.set(TOKEN, token);
-
 };
 
-export const getToken = () =>{
+export const getToken = () => {
     return Cookies.get(TOKEN) || null;
-
 };
 
-export const removeToken = () =>{
-     Cookies.remove(TOKEN);
-
+export const removeToken = () => {
+    Cookies.remove(TOKEN);
 };
 
-export const decodeToken = () =>{
+export const decodeToken = () => {
     const token = getToken();
     if (!token) return null;
 
-    try{
+    try {
         return jwtDecode(token);
-    }catch(error){
+    } catch (error) {
         console.error('Failed to decode token:', error);
         return null;
     }
-
 };
 
 export const isTokenValide = () => {
-    const decodeToken = decodeToken(); //use decodeToken function
-    if(!decodeToken || !decodeToken.exp) return false; //ensure token exist and has an expiry
+    const decoded = decodeToken(); 
+    if (!decoded || !decoded.exp) return false;
 
-    const expiry = decodeToken.exp * 1000; //convert expiry to milliseconds
-    return Date.now() < expiry; //check if token is stiil valide
-
-
-    
-}
-
-
-
+    const expiry = decoded.exp * 1000; 
+    return Date.now() < expiry; 
+};

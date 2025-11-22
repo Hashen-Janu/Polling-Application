@@ -6,40 +6,26 @@ import lombok.Data;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-import java.util.Date;
 import java.util.List;
-
 
 @Entity
 @Data
-public class Poll{
-
+public class Options {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String question;
+    private String title;
 
-    private Date postedDate;
-
-    private Date expiredAt;
-
-    private Integer totalVoteCount = 0;
-
-    private boolean isExpired = false;
-
-    @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL)
-    @JsonIgnore
-    private List<Options> options;
+    private Integer voteCount = 0;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "poll-id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JsonIgnore
-    private User user;
+    private Poll poll;
+
+    @OneToMany(mappedBy = "options", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Vote> voteList;
 }
-
-
-
-
-

@@ -34,7 +34,7 @@ const Login = () => {
             if (response.status === 200) {
                 const responseData = response.data;
 
-                saveToken(responseData.token);
+                saveToken(responseData.jwtToken);
 
                 enqueueSnackbar(`Welcome ${responseData.name}`, {
                     variant: "success",

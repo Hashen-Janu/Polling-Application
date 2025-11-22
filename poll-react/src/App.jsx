@@ -10,12 +10,6 @@ import ViewPollDetails from "./pages/user/view-poll-details/ViewPollDetails";
 
 
 
-
-
-
-
-
-
 function App() {
   return (
     <>
