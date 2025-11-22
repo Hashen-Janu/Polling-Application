@@ -16,10 +16,14 @@ import {
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "notistack";
+import { signup } from "../../../services/auth/auth";
+import { saveToken } from "../../../utility/common";
 
 const defaultTheme = createTheme(); // ✅ FIXED
 
 const Signup = () => {
+  const {enqueueSnackbar} = useSnackbar();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -43,8 +47,27 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    console.log(formData);
-    setLoading(false);
+    try{
+      const response = await signup(formData);
+      if(response.status === 201){
+        const responseData = response.data;
+        saveToken(responseData.token);
+        navigate("/dashboard");
+        enqueueSnackbar(`Welcome ${responseData.name}`, {
+          variant:'success',
+          autoHideDuration: 5000
+        });
+      }
+      
+    }catch(error){
+      if(error.response && error.response.status === 409){
+        enqueueSnackbar('User already exists!',{variant: 'error',autoHideDuration: 5000});
+      }else{
+        enqueueSnackbar('Sing up faild!', {variant: 'error',autoHideDuration: 5000});
+      }
+    }finally{
+      setLoading(false);
+    }
   };
 
   return (

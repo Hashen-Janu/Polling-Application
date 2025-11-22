@@ -2,14 +2,19 @@ import { Avatar, Backdrop, Box, Button, CircularProgress, Container, CssBaseline
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LockOutline, Password, TextFields } from "@mui/icons-material";
+import { useSnackbar } from "notistack";   // ✅ FIXED
+import { login } from "../../../services/auth/auth";
+import { saveToken } from "../../../utility/common"; // ✅ FIXED
 
 const defaultTheme = createTheme();
 
 const Login = () => {
+
+    const { enqueueSnackbar } = useSnackbar();   // ✅ FIXED
+
     const [formData, setFormData] = useState({
         email: '',
-        Password: ''
+        password: ''   // ✅ FIXED (lowercase)
     });
 
     const [loading, setLoading] = useState(false);
@@ -23,8 +28,29 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        console.log(formData);
-        setLoading(false);
+        try {
+            const response = await login(formData);
+
+            if (response.status === 200) {
+                const responseData = response.data;
+
+                saveToken(responseData.token);
+
+                enqueueSnackbar(`Welcome ${responseData.name}`, {
+                    variant: "success",
+                    autoHideDuration: 5000
+                });
+
+                navigate("/dashboard");
+            }
+        } catch (error) {
+            enqueueSnackbar("Signin failed!", {
+                variant: "error",
+                autoHideDuration: 5000
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -36,12 +62,12 @@ const Login = () => {
                     <Box
                         sx={{
                             marginTop: 8,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
                         }}
                     >
-                        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
+                        <Avatar sx={{ m: 1, bgcolor: "primary.main" }}>
                             <LockOutlinedIcon />
                         </Avatar>
 
@@ -69,10 +95,10 @@ const Login = () => {
                                 fullWidth
                                 id="password"
                                 label="Password"
-                                name="Password"
+                                name="password"     // ✅ FIXED (lowercase)
                                 type="password"
                                 autoComplete="current-password"
-                                value={formData.Password}
+                                value={formData.password}
                                 onChange={handleInputChange}
                             />
 
@@ -81,7 +107,7 @@ const Login = () => {
                                 fullWidth
                                 variant="contained"
                                 sx={{ mt: 3, mb: 2 }}
-                                disabled={!formData.email || !formData.Password}
+                                disabled={!formData.email || !formData.password}
                             >
                                 {loading ? <CircularProgress size={24} /> : "Sign In"}
                             </Button>
@@ -97,10 +123,8 @@ const Login = () => {
                                     </Link>
                                 </Grid>
                             </Grid>
-
                         </Box>
                     </Box>
-
                 </Container>
             </ThemeProvider>
 
