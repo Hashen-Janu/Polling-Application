@@ -9,11 +9,18 @@ import com.poll.poll_Spring_Boot.repositories.OptionsRepository;
 import com.poll.poll_Spring_Boot.repositories.PollRepository;
 import com.poll.poll_Spring_Boot.repositories.VoteRepository;
 import com.poll.poll_Spring_Boot.utils.JWTUtil;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.net.SocketTimeoutException;
+import java.sql.SQLOutput;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +37,55 @@ public class PollServiceImpl implements PollService{
      private final JavaMailSender javaMailSender;
 
      private final VoteRepository voteRepository;
+
+    @Override
+    public PollDTO postPoll(PollDTO pollDTO) {
+        User user = jwtUtil.getLoggedInUser();
+        if (user != null){
+            Poll poll = new Poll();
+            poll.setQuestion(pollDTO.getQuestion());
+            poll.setPostedDate(new Date());
+            poll.setExpiredAt(pollDTO.getExpiredAt());
+            poll.setUser(user);
+            poll.setTotalVoteCount(0);
+            Poll createdPoll = pollRepository.save(poll);
+
+            List<Options> options = new ArrayList<>();
+            for(String optionTitle : pollDTO.getOptions()){
+                Options option = new Options();
+                option.setTitle(optionTitle);
+                option.setPoll(createdPoll);
+                option.setVoteCount(0);
+                options.add(option);
+
+            }
+
+            List<Options> savedOptions = optionsRepository.saveAll(options);
+            poll.setOptions(savedOptions);
+            pollRepository.save(poll);
+
+            if (createdPoll.getId() != null){
+                try {
+                    MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+                    MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage,true);
+                    mimeMessageHelper.setFrom("sender.email099@gmail.com");
+                    mimeMessageHelper.setTo(user.getEmail());
+                    mimeMessageHelper.setSubject("new poll posted");
+                    mimeMessageHelper.setText("Dear " + user.getFirstname() + "!I trust this message find you in good spirits." +
+                            "I wanted to inform you that a new poll has been successfully posted." +
+                            "The question you submitted is as follows:'" + createdPoll.getQuestion() + "' . " +
+                            "and it is scheduled to expire on " + createdPoll.getPostedDate() +"' " +
+                            "Thank you for your engagement and contribution to our platform. POll APP");
+                    javaMailSender.send(mimeMessage);
+                    System.out.println("Mail sent to " + user.getEmail());
+                } catch (MessagingException e){
+                    System.out.println("Failed send email: " + e.getMessage());
+                }
+            }
+            return getPollDTOInService(createdPoll);
+        }
+        return null;
+    }
 
      public PollDTO getPollDTOInService(Poll poll){
          User loggedInUser = jwtUtil.getLoggedInUser();
@@ -69,5 +125,6 @@ public class PollServiceImpl implements PollService{
         optionsDTO.setUserVotedThisOption(voteRepository.existsByPollIdAndUserIdAndOptionsId(pollId, userId, options.getId()));
         return optionsDTO;
     }
+
 
 }
