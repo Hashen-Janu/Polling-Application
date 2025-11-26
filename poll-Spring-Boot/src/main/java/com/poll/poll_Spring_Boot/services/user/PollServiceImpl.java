@@ -11,6 +11,7 @@ import com.poll.poll_Spring_Boot.repositories.VoteRepository;
 import com.poll.poll_Spring_Boot.utils.JWTUtil;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.net.SocketTimeoutException;
 import java.sql.SQLOutput;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -87,7 +89,36 @@ public class PollServiceImpl implements PollService{
         return null;
     }
 
-     public PollDTO getPollDTOInService(Poll poll){
+    @Override
+    public void deletePoll(Long id) {
+        pollRepository.deleteById(id);
+
+    }
+
+    @Override
+    public List<PollDTO> getAllPolls() {
+        return pollRepository.findAll()
+                .stream()
+                .sorted(Comparator.comparing(Poll::getPostedDate).reversed())
+                .map(this::getPollDTOInService)
+                .collect(Collectors.toList());
+
+    }
+
+    @Override
+    public List<PollDTO> getMyPolls() {
+        User user = jwtUtil.getLoggedInUser();
+        if (user != null) {
+            return pollRepository.findAllByUserId(user.getId())
+                    .stream()
+                    .sorted(Comparator.comparing(Poll::getPostedDate).reversed())
+                    .map(this::getPollDTOInService)
+                    .collect(Collectors.toList());
+        }
+        throw new EntityNotFoundException("User not found");
+    }
+
+    public PollDTO getPollDTOInService(Poll poll){
          User loggedInUser = jwtUtil.getLoggedInUser();
          PollDTO pollDTO = new PollDTO();
          pollDTO.setId(poll.getId());
